@@ -107,7 +107,12 @@ export const useWebRTC = () => {
         const localStream = await getLocalStream();
 
         // Connect to Socket.io
-        socketRef.current = io('http://localhost:3001');
+        socketRef.current = io(
+          import.meta.env.VITE_SIGNALING_URL || 'http://localhost:3001',
+          {
+            transports: ['websocket'],
+          }
+        );
 
         // Create PeerConnection
         const pc = createPeerConnection();
