@@ -1,0 +1,24 @@
+{
+  "name": "peerconnect",
+  "version": "1.0.0",
+  "description": "Explored WebRTC for real-time media streaming by building a peer-to-peer video chat",
+  "main": "server/index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd server && npm run dev",
+    "client": "cd client && npm run dev",
+    "build": "cd client && npm run build",
+    "start": "cd server && npm start"
+  },
+  "keywords": [
+    "webrtc",
+    "video-chat",
+    "p2p",
+    "realtime"
+  ],
+  "author": "Yeonsu Choi",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
