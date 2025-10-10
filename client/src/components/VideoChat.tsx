@@ -31,7 +31,14 @@ const VideoChat: React.FC = () => {
       <div className='max-w-6xl mx-auto'>
         {/* Header */}
         <div className='text-center mb-8'>
-          <h1 className='text-4xl font-bold text-gray-800 mb-2'>PeerConnect</h1>
+          <div className='flex items-center justify-center gap-3 mb-2'>
+            <img
+              src='/peerconnect-icon.png'
+              alt='PeerConnect icon'
+              className='h-10 w-10'
+            />
+            <h1 className='text-4xl font-bold text-gray-800'>PeerConnect</h1>
+          </div>
           <p className='text-gray-600'>WebRTC P2P Video Chat</p>
         </div>
 
