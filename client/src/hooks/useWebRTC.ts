@@ -91,6 +91,16 @@ export const useWebRTC = () => {
 
     pc.oniceconnectionstatechange = () => {
       console.log('ICE connection state:', pc.iceConnectionState);
+
+      // If ICE connection fails, try to reconnect
+      if (pc.iceConnectionState === 'failed') {
+        console.log('ICE connection failed, attempting to restart...');
+        pc.restartIce();
+      }
+    };
+
+    pc.onicegatheringstatechange = () => {
+      console.log('ICE gathering state:', pc.iceGatheringState);
     };
 
     peerConnectionRef.current = pc;
@@ -110,9 +120,20 @@ export const useWebRTC = () => {
         socketRef.current = io(
           import.meta.env.VITE_SIGNALING_URL || 'http://localhost:3001',
           {
-            transports: ['websocket'],
+            transports: ['websocket', 'polling'],
+            timeout: 20000,
+            forceNew: true,
           }
         );
+
+        // Handle connection events
+        socketRef.current.on('disconnect', (reason) => {
+          console.log('Disconnected from signaling server:', reason);
+        });
+
+        socketRef.current.on('connect_error', (error) => {
+          console.error('Connection error:', error);
+        });
 
         // Create PeerConnection
         const pc = createPeerConnection();
@@ -122,24 +143,7 @@ export const useWebRTC = () => {
           pc.addTrack(track, localStream);
         });
 
-        // Join room
-        socketRef.current.emit('join-room', roomId);
-
-        setState((prev) => ({
-          ...prev,
-          roomId,
-          isInRoom: true,
-        }));
-
-        // Reassign stream to local video element (after component mount)
-        setTimeout(() => {
-          if (localVideoRef.current && localStream) {
-            localVideoRef.current.srcObject = localStream;
-            console.log('Local video stream reassigned');
-          }
-        }, 100);
-
-        // Handle signaling messages
+        // Set up signaling message handlers BEFORE joining room
         socketRef.current.on('signal', async (message: SignalMessage) => {
           const { signal, type, from } = message;
           console.log(`Signal received: ${type} from ${from}`);
@@ -166,7 +170,11 @@ export const useWebRTC = () => {
               );
             } else if (type === 'ice-candidate') {
               console.log('Processing ICE candidate...');
-              await pc.addIceCandidate(signal as RTCIceCandidateInit);
+              try {
+                await pc.addIceCandidate(signal as RTCIceCandidateInit);
+              } catch (iceError) {
+                console.warn('Failed to add ICE candidate:', iceError);
+              }
             }
           } catch (error) {
             console.error('Signal processing error:', error);
@@ -176,16 +184,82 @@ export const useWebRTC = () => {
         // Create offer when new user joins
         socketRef.current.on('user-joined', async () => {
           console.log('New user joined, creating offer...');
-          const offer = await pc.createOffer();
-          await pc.setLocalDescription(offer);
+          try {
+            const offer = await pc.createOffer({
+              offerToReceiveAudio: true,
+              offerToReceiveVideo: true,
+            });
+            await pc.setLocalDescription(offer);
 
-          socketRef.current?.emit('signal', {
-            roomId,
-            signal: offer,
-            type: 'offer',
-          });
-          console.log('Offer sent');
+            socketRef.current?.emit('signal', {
+              roomId,
+              signal: offer,
+              type: 'offer',
+            });
+            console.log('Offer sent');
+          } catch (error) {
+            console.error('Failed to create offer:', error);
+          }
         });
+
+        // Wait for connection before joining room
+        socketRef.current.on('connect', () => {
+          console.log('Connected to signaling server, joining room...');
+          socketRef.current?.emit('join-room', roomId);
+        });
+
+        // If already connected, join immediately
+        if (socketRef.current.connected) {
+          socketRef.current.emit('join-room', roomId);
+        }
+
+        setState((prev) => ({
+          ...prev,
+          roomId,
+          isInRoom: true,
+        }));
+
+        // Reassign stream to local video element (after component mount)
+        setTimeout(() => {
+          if (localVideoRef.current && localStream) {
+            localVideoRef.current.srcObject = localStream;
+            console.log('Local video stream reassigned');
+          }
+        }, 100);
+
+        // Check if there are already users in the room and create offer immediately
+        socketRef.current.on('room-users', (userCount: number) => {
+          console.log(`Room has ${userCount} users`);
+          if (userCount > 1) {
+            // There are other users, create offer immediately
+            setTimeout(async () => {
+              try {
+                console.log('Creating initial offer for existing users...');
+                const offer = await pc.createOffer({
+                  offerToReceiveAudio: true,
+                  offerToReceiveVideo: true,
+                });
+                await pc.setLocalDescription(offer);
+
+                socketRef.current?.emit('signal', {
+                  roomId,
+                  signal: offer,
+                  type: 'offer',
+                });
+                console.log('Initial offer sent');
+              } catch (error) {
+                console.error('Failed to create initial offer:', error);
+              }
+            }, 1000);
+          }
+        });
+
+        // Wait for ICE gathering to complete before checking connection
+        setTimeout(() => {
+          if (pc.iceGatheringState === 'complete') {
+            console.log('ICE gathering completed');
+          }
+        }, 2000);
       } catch (error) {
         console.error('Failed to join room:', error);
         throw error;
