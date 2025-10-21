@@ -1,6 +1,6 @@
 # PeerConnect - WebRTC P2P Video Chat
 
-**Explored WebRTC for real-time media streaming** by building a peer-to-peer video chat with React, TypeScript, and Socket.io.
+A peer-to-peer video chat app with WebRTC and Socket.io
 
 <br/>
 
@@ -26,18 +26,38 @@
 - Tailwind CSS
 - Socket.io Client
 - WebRTC APIs
+- Vite
 
 ### Backend
 
 - Node.js + Express
 - Socket.io
 - TypeScript
+- CORS Support
+
+### Deployment
+
+- **Frontend**: Vercel (Static Hosting)
+- **Backend**: Render (Node.js Hosting)
+
+<br/>
+
+## 🌐 Live Demo
+
+[https://peer-cnct.vercel.app/](https://peer-cnct.vercel.app/)
+
+### How to Test
+
+1. Open the live demo URL in two different browser windows/tabs
+2. Enter the same room code in both windows
+3. Allow camera and microphone permissions
+4. Start your P2P video chat!
 
 <br/>
 
 ## 🚀 Getting Started
 
-### 1. Install Dependencies
+### Install Dependencies
 
 ```bash
 # From root directory
@@ -50,7 +70,7 @@ cd server && npm install
 cd ../client && npm install
 ```
 
-### 2. Run Development Server
+### Run Development Server
 
 ```bash
 # From root directory (runs both server and client)
@@ -61,7 +81,7 @@ npm run server  # Port 3001
 npm run client  # Port 3000
 ```
 
-### 3. Usage
+### Usage
 
 1. Open `http://localhost:3000` in your browser
 2. Two users with the same room code are required
@@ -72,12 +92,14 @@ npm run client  # Port 3000
 
 ## 🔑 Key Features
 
-- ✅ **P2P WebRTC Connection**: Direct browser-to-browser media stream exchange
-- ✅ **Real-time Signaling**: Offer/Answer, ICE Candidate exchange via Socket.io
-- ✅ **Local/Remote Streams**: Camera stream capture and display
-- ✅ **Room-based Connection**: Multi-user support via room codes
-- ✅ **Connection Status Display**: Real-time connection state monitoring
-- ✅ **Responsive UI**: Mobile/desktop support
+- **P2P WebRTC Connection**: Direct browser-to-browser media stream exchange
+- **Real-time Signaling**: Offer/Answer, ICE Candidate exchange via Socket.io
+- **Local/Remote Streams**: Camera stream capture and display
+- **Room-based Connection**: Multi-user support via room codes
+- **Connection Status Display**: Real-time connection state monitoring
+- **Responsive UI**: Mobile/desktop support
+- **Production Ready**: Deployed on Vercel + Render
+- **HTTPS Support**: Secure WebRTC connections
 
 <br/>
 
@@ -85,15 +107,18 @@ npm run client  # Port 3000
 
 ```
 peerconnect/
-├── client/                 # React frontend
+├── client/                 # React frontend (Vercel)
 │   ├── src/
 │   │   ├── components/     # React components
 │   │   ├── hooks/         # Custom hooks (useWebRTC)
 │   │   ├── types.ts       # TypeScript type definitions
 │   │   └── ...
+│   ├── vercel.json        # Vercel deployment config
 │   └── package.json
-├── server/                 # Express backend
+├── server/                 # Express backend (Render)
 │   ├── index.ts           # Signaling server
+│   ├── dist/              # Compiled JavaScript
 │   └── package.json
+├── render.yaml            # Render deployment config
 └── package.json           # Root package configuration
 ```
