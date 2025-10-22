@@ -123,11 +123,23 @@ const VideoChat: React.FC = () => {
                   playsInline
                   className='w-full h-64 object-cover bg-gray-800'
                 />
-                {!state.remoteStream && (
+                {state.peerLeft ? (
+                  <div className='flex items-center justify-center h-64 text-red-400 bg-gray-800'>
+                    <div className='text-center'>
+                      <div className='text-2xl mb-2'>👋</div>
+                      <div className='text-lg font-semibold'>
+                        Participant Left
+                      </div>
+                      <div className='text-sm mt-1'>
+                        Waiting for new participants...
+                      </div>
+                    </div>
+                  </div>
+                ) : !state.remoteStream ? (
                   <div className='flex items-center justify-center h-64 text-gray-400'>
                     Waiting for other participants...
                   </div>
-                )}
+                ) : null}
               </div>
             </div>
 
@@ -139,10 +151,20 @@ const VideoChat: React.FC = () => {
                   • Local Stream: {state.localStream ? 'Active' : 'Inactive'}
                 </p>
                 <p>
-                  • Remote Stream: {state.remoteStream ? 'Active' : 'Inactive'}
+                  • Remote Stream:{' '}
+                  {state.peerLeft
+                    ? 'Participant Left'
+                    : state.remoteStream
+                    ? 'Active'
+                    : 'Waiting'}
                 </p>
                 <p>
-                  • P2P Connection: {state.isConnected ? 'Success' : 'Waiting'}
+                  • P2P Connection:{' '}
+                  {state.peerLeft
+                    ? 'Disconnected'
+                    : state.isConnected
+                    ? 'Success'
+                    : 'Waiting'}
                 </p>
               </div>
             </div>

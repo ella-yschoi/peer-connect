@@ -11,4 +11,5 @@ export interface WebRTCState {
   isConnected: boolean;
   roomId: string;
   isInRoom: boolean;
+  peerLeft: boolean;
 }

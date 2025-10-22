@@ -17,6 +17,7 @@ export const useWebRTC = () => {
     isConnected: false,
     roomId: '',
     isInRoom: false,
+    peerLeft: false,
   });
 
   const socketRef = useRef<Socket | null>(null);
@@ -184,6 +185,8 @@ export const useWebRTC = () => {
         // Create offer when new user joins
         socketRef.current.on('user-joined', async () => {
           console.log('New user joined, creating offer...');
+          setState((prev) => ({ ...prev, peerLeft: false }));
+
           try {
             const offer = await pc.createOffer({
               offerToReceiveAudio: true,
@@ -254,6 +257,27 @@ export const useWebRTC = () => {
           }
         });
 
+        // Handle peer leaving
+        socketRef.current.on('user-left', (userId: string) => {
+          console.log(
+            `🔴 User ${userId} left the room - setting peerLeft to true`
+          );
+          setState((prev) => ({ ...prev, peerLeft: true }));
+
+          // Clean up remote stream
+          if (remoteVideoRef.current) {
+            remoteVideoRef.current.srcObject = null;
+            console.log('🔴 Remote video stream cleared');
+          }
+
+          // Close peer connection
+          if (peerConnectionRef.current) {
+            peerConnectionRef.current.close();
+            peerConnectionRef.current = null;
+            console.log('🔴 Peer connection closed');
+          }
+        });
+
         // Wait for ICE gathering to complete before checking connection
         setTimeout(() => {
           if (pc.iceGatheringState === 'complete') {
@@ -270,6 +294,13 @@ export const useWebRTC = () => {
 
   // Leave room and cleanup
   const leaveRoom = useCallback(() => {
+    console.log('🚪 Leaving room:', state.roomId);
+    // First notify server that we're leaving the room
+    if (socketRef.current && state.roomId) {
+      console.log('📤 Sending leave-room event to server');
+      socketRef.current.emit('leave-room', state.roomId);
+    }
+
     if (state.localStream) {
       state.localStream.getTracks().forEach((track) => track.stop());
     }
@@ -289,8 +320,9 @@ export const useWebRTC = () => {
       isConnected: false,
       roomId: '',
       isInRoom: false,
+      peerLeft: false,
     });
-  }, [state.localStream]);
+  }, [state.localStream, state.roomId]);
 
   return {
     state,

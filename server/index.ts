@@ -46,9 +46,26 @@ io.on('connection', (socket) => {
     socket.to(roomId).emit('signal', { signal, type, from: socket.id });
   });
 
+  // Handle explicit leave room
+  socket.on('leave-room', (roomId: string) => {
+    console.log(`🚪 Client ${socket.id} explicitly left room ${roomId}`);
+    console.log(`📤 Broadcasting user-left event to room ${roomId}`);
+    socket.to(roomId).emit('user-left', socket.id);
+    socket.leave(roomId);
+  });
+
   // Handle disconnection
   socket.on('disconnect', () => {
     console.log(`Client disconnected: ${socket.id}`);
+
+    // Notify other users in the same rooms that this user left
+    socket.rooms.forEach((roomId) => {
+      if (roomId !== socket.id) {
+        // socket.id is the default room
+        socket.to(roomId).emit('user-left', socket.id);
+        console.log(`Notified room ${roomId} that user ${socket.id} left`);
+      }
+    });
   });
 });
 
