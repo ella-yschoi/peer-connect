@@ -1,9 +1,17 @@
 import React, { useState } from 'react';
 import { useWebRTC } from '../hooks/useWebRTC';
+import ChatPanel from './ChatPanel';
 
 const VideoChat: React.FC = () => {
-  const { state, localVideoRef, remoteVideoRef, joinRoom, leaveRoom } =
-    useWebRTC();
+  const {
+    state,
+    localVideoRef,
+    remoteVideoRef,
+    joinRoom,
+    leaveRoom,
+    sendMessage,
+    currentUserId,
+  } = useWebRTC();
   const [roomInput, setRoomInput] = useState('');
   const [isJoining, setIsJoining] = useState(false);
 
@@ -90,56 +98,70 @@ const VideoChat: React.FC = () => {
               </div>
             </div>
 
-            {/* Video Grid */}
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-              {/* Local Video */}
-              <div className='bg-gray-900 rounded-lg overflow-hidden relative'>
-                <div className='bg-gray-800 px-4 py-2 text-white text-sm'>
-                  My Screen
-                </div>
-                <video
-                  ref={localVideoRef}
-                  autoPlay
-                  muted
-                  playsInline
-                  className='w-full h-64 object-cover'
-                  style={{ backgroundColor: '#1f2937' }}
-                />
-                {!state.localStream && (
-                  <div className='absolute inset-0 flex items-center justify-center text-gray-400'>
-                    Loading local stream...
+            {/* Video and Chat Grid */}
+            <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
+              {/* Video Grid */}
+              <div className='lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6'>
+                {/* Local Video */}
+                <div className='bg-gray-900 rounded-lg overflow-hidden relative'>
+                  <div className='bg-gray-800 px-4 py-2 text-white text-sm'>
+                    My Screen
                   </div>
-                )}
-              </div>
-
-              {/* Remote Video */}
-              <div className='bg-gray-900 rounded-lg overflow-hidden'>
-                <div className='bg-gray-800 px-4 py-2 text-white text-sm'>
-                  Remote Screen
+                  <video
+                    ref={localVideoRef}
+                    autoPlay
+                    muted
+                    playsInline
+                    className='w-full h-64 object-cover'
+                    style={{ backgroundColor: '#1f2937' }}
+                  />
+                  {!state.localStream && (
+                    <div className='absolute inset-0 flex items-center justify-center text-gray-400'>
+                      Loading local stream...
+                    </div>
+                  )}
                 </div>
-                <video
-                  ref={remoteVideoRef}
-                  autoPlay
-                  playsInline
-                  className='w-full h-64 object-cover bg-gray-800'
-                />
-                {state.peerLeft ? (
-                  <div className='flex items-center justify-center h-64 text-red-400 bg-gray-800'>
-                    <div className='text-center'>
-                      <div className='text-2xl mb-2'>👋</div>
-                      <div className='text-lg font-semibold'>
-                        Participant Left
-                      </div>
-                      <div className='text-sm mt-1'>
-                        Waiting for new participants...
+
+                {/* Remote Video */}
+                <div className='bg-gray-900 rounded-lg overflow-hidden'>
+                  <div className='bg-gray-800 px-4 py-2 text-white text-sm'>
+                    Remote Screen
+                  </div>
+                  <video
+                    ref={remoteVideoRef}
+                    autoPlay
+                    playsInline
+                    className='w-full h-64 object-cover bg-gray-800'
+                  />
+                  {state.peerLeft ? (
+                    <div className='flex items-center justify-center h-64 text-red-400 bg-gray-800'>
+                      <div className='text-center'>
+                        <div className='text-2xl mb-2'>👋</div>
+                        <div className='text-lg font-semibold'>
+                          Participant Left
+                        </div>
+                        <div className='text-sm mt-1'>
+                          Waiting for new participants...
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ) : !state.remoteStream ? (
-                  <div className='flex items-center justify-center h-64 text-gray-400'>
-                    Waiting for other participants...
-                  </div>
-                ) : null}
+                  ) : !state.remoteStream ? (
+                    <div className='flex items-center justify-center h-64 text-gray-400'>
+                      Waiting for other participants...
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+
+              {/* Chat Panel */}
+              <div className='lg:col-span-1'>
+                <div className='h-96'>
+                  <ChatPanel
+                    messages={state.messages}
+                    onSendMessage={sendMessage}
+                    currentUserId={currentUserId}
+                  />
+                </div>
               </div>
             </div>
 

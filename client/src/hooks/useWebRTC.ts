@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { WebRTCState, SignalMessage } from '../types';
+import { WebRTCState, SignalMessage, ChatMessage } from '../types';
 
 const STUN_SERVERS = {
   iceServers: [
@@ -18,12 +18,49 @@ export const useWebRTC = () => {
     roomId: '',
     isInRoom: false,
     peerLeft: false,
+    messages: [],
   });
 
+  const [currentUserId, setCurrentUserId] = useState<string>('');
   const socketRef = useRef<Socket | null>(null);
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
+
+  // Load chat messages from localStorage
+  const loadChatMessages = useCallback((roomId: string) => {
+    try {
+      const savedMessages = localStorage.getItem(`chat-${roomId}`);
+      if (savedMessages) {
+        const messages = JSON.parse(savedMessages);
+        console.log('Loading messages from localStorage:', messages);
+        setState((prev) => {
+          // Only load if we don't have messages yet or if localStorage has more messages
+          if (
+            prev.messages.length === 0 ||
+            messages.length > prev.messages.length
+          ) {
+            return { ...prev, messages };
+          }
+          return prev;
+        });
+      }
+    } catch (error) {
+      console.error('Failed to load chat messages:', error);
+    }
+  }, []);
+
+  // Save chat messages to localStorage
+  const saveChatMessages = useCallback(
+    (roomId: string, messages: ChatMessage[]) => {
+      try {
+        localStorage.setItem(`chat-${roomId}`, JSON.stringify(messages));
+      } catch (error) {
+        console.error('Failed to save chat messages:', error);
+      }
+    },
+    []
+  );
 
   // Monitor local video stream
   useEffect(() => {
@@ -208,11 +245,16 @@ export const useWebRTC = () => {
         // Wait for connection before joining room
         socketRef.current.on('connect', () => {
           console.log('Connected to signaling server, joining room...');
+          // Generate unique user ID for this session
+          const userId = socketRef.current?.id || `user-${Date.now()}`;
+          setCurrentUserId(userId);
           socketRef.current?.emit('join-room', roomId);
         });
 
         // If already connected, join immediately
         if (socketRef.current.connected) {
+          const userId = socketRef.current.id || `user-${Date.now()}`;
+          setCurrentUserId(userId);
           socketRef.current.emit('join-room', roomId);
         }
 
@@ -220,6 +262,7 @@ export const useWebRTC = () => {
           ...prev,
           roomId,
           isInRoom: true,
+          messages: [], // Clear messages when joining new room
         }));
 
         // Reassign stream to local video element (after component mount)
@@ -278,6 +321,44 @@ export const useWebRTC = () => {
           }
         });
 
+        // Handle chat messages
+        socketRef.current.on('receive-message', (message: ChatMessage) => {
+          console.log(
+            'Received message:',
+            message,
+            'Current userId:',
+            currentUserId
+          );
+          setState((prev) => {
+            // Check if message already exists to prevent duplicates
+            const messageExists = prev.messages.some(
+              (m) => m.id === message.id
+            );
+            if (messageExists) {
+              console.log('Message already exists, skipping:', message.id);
+              return prev;
+            }
+
+            const newMessages = [...prev.messages, message].sort(
+              (a, b) => a.timestamp - b.timestamp
+            );
+            console.log('Updated messages:', newMessages);
+
+            // Save to localStorage
+            saveChatMessages(roomId, newMessages);
+
+            return {
+              ...prev,
+              messages: newMessages,
+            };
+          });
+        });
+
+        // Load existing chat messages after user ID is set
+        setTimeout(() => {
+          loadChatMessages(roomId);
+        }, 100);
+
         // Wait for ICE gathering to complete before checking connection
         setTimeout(() => {
           if (pc.iceGatheringState === 'complete') {
@@ -289,7 +370,7 @@ export const useWebRTC = () => {
         throw error;
       }
     },
-    [getLocalStream, createPeerConnection]
+    [getLocalStream, createPeerConnection, loadChatMessages, saveChatMessages]
   );
 
   // Leave room and cleanup
@@ -321,8 +402,47 @@ export const useWebRTC = () => {
       roomId: '',
       isInRoom: false,
       peerLeft: false,
+      messages: [], // Clear messages when leaving room
     });
   }, [state.localStream, state.roomId]);
+
+  // Send chat message
+  const sendMessage = useCallback(
+    (content: string) => {
+      if (!socketRef.current || !state.roomId || !content.trim()) return;
+
+      console.log('Sending message with userId:', currentUserId);
+
+      const message: ChatMessage = {
+        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        content: content.trim(),
+        senderId: currentUserId,
+        timestamp: Date.now(),
+      };
+
+      socketRef.current.emit('send-message', {
+        roomId: state.roomId,
+        message,
+      });
+
+      // Add message to local state immediately
+      setState((prev) => {
+        const newMessages = [...prev.messages, message].sort(
+          (a, b) => a.timestamp - b.timestamp
+        );
+        console.log('Sending message, updated messages:', newMessages);
+
+        // Save to localStorage
+        saveChatMessages(state.roomId, newMessages);
+
+        return {
+          ...prev,
+          messages: newMessages,
+        };
+      });
+    },
+    [state.roomId, state.messages, saveChatMessages, currentUserId]
+  );
 
   return {
     state,
@@ -330,5 +450,7 @@ export const useWebRTC = () => {
     remoteVideoRef,
     joinRoom,
     leaveRoom,
+    sendMessage,
+    currentUserId,
   };
 };

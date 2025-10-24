@@ -46,6 +46,14 @@ io.on('connection', (socket) => {
     socket.to(roomId).emit('signal', { signal, type, from: socket.id });
   });
 
+  // Handle chat messages
+  socket.on('send-message', ({ roomId, message }) => {
+    console.log(`Chat message from ${socket.id} to room ${roomId}`);
+    socket
+      .to(roomId)
+      .emit('receive-message', { ...message, senderId: socket.id });
+  });
+
   // Handle explicit leave room
   socket.on('leave-room', (roomId: string) => {
     console.log(`🚪 Client ${socket.id} explicitly left room ${roomId}`);

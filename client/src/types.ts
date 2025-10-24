@@ -4,6 +4,13 @@ export interface SignalMessage {
   from: string;
 }
 
+export interface ChatMessage {
+  id: string;
+  content: string;
+  senderId: string;
+  timestamp: number;
+}
+
 export interface WebRTCState {
   localStream: MediaStream | null;
   remoteStream: MediaStream | null;
@@ -12,4 +19,5 @@ export interface WebRTCState {
   roomId: string;
   isInRoom: boolean;
   peerLeft: boolean;
+  messages: ChatMessage[];
 }
