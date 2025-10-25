@@ -27,29 +27,6 @@ export const useWebRTC = () => {
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
 
-  // Load chat messages from localStorage
-  const loadChatMessages = useCallback((roomId: string) => {
-    try {
-      const savedMessages = localStorage.getItem(`chat-${roomId}`);
-      if (savedMessages) {
-        const messages = JSON.parse(savedMessages);
-        console.log('Loading messages from localStorage:', messages);
-        setState((prev) => {
-          // Only load if we don't have messages yet or if localStorage has more messages
-          if (
-            prev.messages.length === 0 ||
-            messages.length > prev.messages.length
-          ) {
-            return { ...prev, messages };
-          }
-          return prev;
-        });
-      }
-    } catch (error) {
-      console.error('Failed to load chat messages:', error);
-    }
-  }, []);
-
   // Save chat messages to localStorage
   const saveChatMessages = useCallback(
     (roomId: string, messages: ChatMessage[]) => {
@@ -61,6 +38,16 @@ export const useWebRTC = () => {
     },
     []
   );
+
+  // Clear chat messages from localStorage
+  const clearChatMessages = useCallback((roomId: string) => {
+    try {
+      localStorage.removeItem(`chat-${roomId}`);
+      console.log('Cleared chat messages for room:', roomId);
+    } catch (error) {
+      console.error('Failed to clear chat messages:', error);
+    }
+  }, []);
 
   // Monitor local video stream
   useEffect(() => {
@@ -258,6 +245,9 @@ export const useWebRTC = () => {
           socketRef.current.emit('join-room', roomId);
         }
 
+        // Clear any existing chat messages for this room before joining
+        clearChatMessages(roomId);
+
         setState((prev) => ({
           ...prev,
           roomId,
@@ -354,11 +344,6 @@ export const useWebRTC = () => {
           });
         });
 
-        // Load existing chat messages after user ID is set
-        setTimeout(() => {
-          loadChatMessages(roomId);
-        }, 100);
-
         // Wait for ICE gathering to complete before checking connection
         setTimeout(() => {
           if (pc.iceGatheringState === 'complete') {
@@ -370,12 +355,18 @@ export const useWebRTC = () => {
         throw error;
       }
     },
-    [getLocalStream, createPeerConnection, loadChatMessages, saveChatMessages]
+    [getLocalStream, createPeerConnection, saveChatMessages, clearChatMessages]
   );
 
   // Leave room and cleanup
   const leaveRoom = useCallback(() => {
     console.log('🚪 Leaving room:', state.roomId);
+
+    // Clear chat messages from localStorage before leaving
+    if (state.roomId) {
+      clearChatMessages(state.roomId);
+    }
+
     // First notify server that we're leaving the room
     if (socketRef.current && state.roomId) {
       console.log('📤 Sending leave-room event to server');
@@ -404,7 +395,7 @@ export const useWebRTC = () => {
       peerLeft: false,
       messages: [], // Clear messages when leaving room
     });
-  }, [state.localStream, state.roomId]);
+  }, [state.localStream, state.roomId, clearChatMessages]);
 
   // Send chat message
   const sendMessage = useCallback(
