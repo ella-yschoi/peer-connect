@@ -52,6 +52,7 @@ A peer-to-peer video chat app with WebRTC and Socket.io
 2. Enter the same room code in both windows
 3. Allow camera and microphone permissions
 4. Start your P2P video chat!
+5. Use the chat panel to send text messages during the call
 
 <br/>
 
@@ -87,6 +88,7 @@ npm run client  # Port 3000
 2. Two users with the same room code are required
 3. Allow camera and microphone permissions
 4. Real-time video chat through WebRTC P2P connection
+5. Use the chat panel for text messaging during video calls
 
 <br/>
 
@@ -94,6 +96,7 @@ npm run client  # Port 3000
 
 - **P2P WebRTC Connection**: Direct browser-to-browser media stream exchange
 - **Real-time Signaling**: Offer/Answer, ICE Candidate exchange via Socket.io
+- **Real-time Chat**: Text messaging with Socket.io signaling
 - **Local/Remote Streams**: Camera stream capture and display
 - **Room-based Connection**: Multi-user support via room codes
 - **Connection Status Display**: Real-time connection state monitoring
