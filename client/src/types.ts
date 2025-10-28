@@ -21,3 +21,18 @@ export interface WebRTCState {
   peerLeft: boolean;
   messages: ChatMessage[];
 }
+
+// Emoji reaction types
+export type ReactionEmoji = '👏' | '👍' | '❤️' | '😂' | '😮' | '🎉';
+
+export interface ReactionEvent {
+  id: string; // unique id per reaction
+  emoji: ReactionEmoji;
+  senderId: string;
+  timestamp: number;
+}
+
+// Extendable app state additions for reactions
+export interface WebRTCState {
+  reactions: ReactionEvent[];
+}

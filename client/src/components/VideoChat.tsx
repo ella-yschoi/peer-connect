@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useWebRTC } from '../hooks/useWebRTC';
 import ChatPanel from './ChatPanel';
+import { ReactionEmoji } from '../types';
 
 const VideoChat: React.FC = () => {
   const {
@@ -10,6 +11,7 @@ const VideoChat: React.FC = () => {
     joinRoom,
     leaveRoom,
     sendMessage,
+    sendReaction,
     currentUserId,
   } = useWebRTC();
   const [roomInput, setRoomInput] = useState('');
@@ -28,6 +30,8 @@ const VideoChat: React.FC = () => {
       setIsJoining(false);
     }
   };
+
+  const emojis: ReactionEmoji[] = ['👏', '👍', '❤️', '😂', '😮', '🎉'];
 
   const handleLeaveRoom = () => {
     leaveRoom();
@@ -120,10 +124,25 @@ const VideoChat: React.FC = () => {
                       Loading local stream...
                     </div>
                   )}
+                  {/* Floating reactions over local video */}
+                  <div className='pointer-events-none absolute inset-0 flex flex-col justify-end items-start p-2 space-y-2'>
+                    {state.reactions
+                      .filter((r) => r.senderId === currentUserId)
+                      .slice(-6)
+                      .map((r) => (
+                        <span
+                          key={r.id}
+                          className='text-3xl animate-bounce'
+                          aria-hidden
+                        >
+                          {r.emoji}
+                        </span>
+                      ))}
+                  </div>
                 </div>
 
                 {/* Remote Video */}
-                <div className='bg-gray-900 rounded-lg overflow-hidden'>
+                <div className='bg-gray-900 rounded-lg overflow-hidden relative'>
                   <div className='bg-gray-800 px-4 py-2 text-white text-sm'>
                     Remote Screen
                   </div>
@@ -150,6 +169,21 @@ const VideoChat: React.FC = () => {
                       Waiting for other participants...
                     </div>
                   ) : null}
+                  {/* Floating reactions over remote video */}
+                  <div className='pointer-events-none absolute inset-0 flex flex-col justify-end items-end p-2 space-y-2'>
+                    {state.reactions
+                      .filter((r) => r.senderId !== currentUserId)
+                      .slice(-6)
+                      .map((r) => (
+                        <span
+                          key={r.id}
+                          className='text-3xl animate-bounce'
+                          aria-hidden
+                        >
+                          {r.emoji}
+                        </span>
+                      ))}
+                  </div>
                 </div>
               </div>
 
@@ -163,6 +197,20 @@ const VideoChat: React.FC = () => {
                   />
                 </div>
               </div>
+            </div>
+
+            {/* Reactions toolbar */}
+            <div className='mt-4 flex flex-wrap gap-2'>
+              {emojis.map((e) => (
+                <button
+                  key={e}
+                  onClick={() => sendReaction(e)}
+                  className='px-3 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-xl'
+                  title='Send reaction'
+                >
+                  {e}
+                </button>
+              ))}
             </div>
 
             {/* Connection Status Info */}

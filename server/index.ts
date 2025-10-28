@@ -54,6 +54,16 @@ io.on('connection', (socket) => {
       .emit('receive-message', { ...message, senderId: socket.id });
   });
 
+  // Handle emoji reactions
+  socket.on('send-reaction', ({ roomId, reaction }) => {
+    console.log(
+      `Reaction ${reaction?.emoji} from ${socket.id} to room ${roomId}`
+    );
+    socket
+      .to(roomId)
+      .emit('receive-reaction', { ...reaction, senderId: socket.id });
+  });
+
   // Handle explicit leave room
   socket.on('leave-room', (roomId: string) => {
     console.log(`🚪 Client ${socket.id} explicitly left room ${roomId}`);

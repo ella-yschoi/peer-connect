@@ -1,6 +1,12 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { WebRTCState, SignalMessage, ChatMessage } from '../types';
+import {
+  WebRTCState,
+  SignalMessage,
+  ChatMessage,
+  ReactionEvent,
+  ReactionEmoji,
+} from '../types';
 
 const STUN_SERVERS = {
   iceServers: [
@@ -19,6 +25,7 @@ export const useWebRTC = () => {
     isInRoom: false,
     peerLeft: false,
     messages: [],
+    reactions: [],
   });
 
   const [currentUserId, setCurrentUserId] = useState<string>('');
@@ -344,6 +351,20 @@ export const useWebRTC = () => {
           });
         });
 
+        // Handle reactions
+        socketRef.current.on('receive-reaction', (reaction: ReactionEvent) => {
+          setState((prev) => ({
+            ...prev,
+            reactions: [...prev.reactions, reaction],
+          }));
+          setTimeout(() => {
+            setState((prev) => ({
+              ...prev,
+              reactions: prev.reactions.filter((r) => r.id !== reaction.id),
+            }));
+          }, 3000);
+        });
+
         // Wait for ICE gathering to complete before checking connection
         setTimeout(() => {
           if (pc.iceGatheringState === 'complete') {
@@ -394,6 +415,7 @@ export const useWebRTC = () => {
       isInRoom: false,
       peerLeft: false,
       messages: [], // Clear messages when leaving room
+      reactions: [],
     });
   }, [state.localStream, state.roomId, clearChatMessages]);
 
@@ -435,6 +457,39 @@ export const useWebRTC = () => {
     [state.roomId, state.messages, saveChatMessages, currentUserId]
   );
 
+  // Send emoji reaction
+  const sendReaction = useCallback(
+    (emoji: ReactionEmoji) => {
+      if (!socketRef.current || !state.roomId) return;
+
+      const reaction: ReactionEvent = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+        emoji,
+        senderId: currentUserId,
+        timestamp: Date.now(),
+      };
+
+      socketRef.current.emit('send-reaction', {
+        roomId: state.roomId,
+        reaction,
+      });
+
+      // show locally as well
+      setState((prev) => ({
+        ...prev,
+        reactions: [...prev.reactions, reaction],
+      }));
+      // auto-remove after 3 seconds
+      setTimeout(() => {
+        setState((prev) => ({
+          ...prev,
+          reactions: prev.reactions.filter((r) => r.id !== reaction.id),
+        }));
+      }, 3000);
+    },
+    [state.roomId, currentUserId]
+  );
+
   return {
     state,
     localVideoRef,
@@ -442,6 +497,7 @@ export const useWebRTC = () => {
     joinRoom,
     leaveRoom,
     sendMessage,
+    sendReaction,
     currentUserId,
   };
 };
