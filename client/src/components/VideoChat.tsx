@@ -12,6 +12,7 @@ const VideoChat: React.FC = () => {
     leaveRoom,
     sendMessage,
     sendReaction,
+    toggleVideoCamera,
     currentUserId,
   } = useWebRTC();
   const [roomInput, setRoomInput] = useState('');
@@ -124,6 +125,15 @@ const VideoChat: React.FC = () => {
                       Loading local stream...
                     </div>
                   )}
+                  {/* Camera disabled overlay */}
+                  {!state.isVideoEnabled && (
+                    <div className='absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75'>
+                      <div className='text-center text-white'>
+                        <div className='text-4xl mb-2'>📹</div>
+                        <div className='text-sm'>Camera Off</div>
+                      </div>
+                    </div>
+                  )}
                   {/* Floating reactions over local video */}
                   <div className='pointer-events-none absolute inset-0 flex flex-col justify-end items-start p-2 space-y-2'>
                     {state.reactions
@@ -138,6 +148,54 @@ const VideoChat: React.FC = () => {
                           {r.emoji}
                         </span>
                       ))}
+                  </div>
+                  {/* Camera toggle button */}
+                  <div className='absolute bottom-4 right-4'>
+                    <button
+                      onClick={toggleVideoCamera}
+                      className={`p-3 rounded-full transition-colors ${
+                        state.isVideoEnabled
+                          ? 'bg-gray-700 hover:bg-gray-600 text-white'
+                          : 'bg-red-600 hover:bg-red-700 text-white'
+                      }`}
+                      title={
+                        state.isVideoEnabled
+                          ? 'Turn off camera'
+                          : 'Turn on camera'
+                      }
+                    >
+                      {state.isVideoEnabled ? (
+                        <svg
+                          xmlns='http://www.w3.org/2000/svg'
+                          className='h-6 w-6'
+                          fill='none'
+                          viewBox='0 0 24 24'
+                          stroke='currentColor'
+                        >
+                          <path
+                            strokeLinecap='round'
+                            strokeLinejoin='round'
+                            strokeWidth={2}
+                            d='M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z'
+                          />
+                        </svg>
+                      ) : (
+                        <svg
+                          xmlns='http://www.w3.org/2000/svg'
+                          className='h-6 w-6'
+                          fill='none'
+                          viewBox='0 0 24 24'
+                          stroke='currentColor'
+                        >
+                          <path
+                            strokeLinecap='round'
+                            strokeLinejoin='round'
+                            strokeWidth={2}
+                            d='M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636'
+                          />
+                        </svg>
+                      )}
+                    </button>
                   </div>
                 </div>
 
@@ -169,6 +227,17 @@ const VideoChat: React.FC = () => {
                       Waiting for other participants...
                     </div>
                   ) : null}
+                  {/* Remote camera disabled overlay */}
+                  {!state.peerLeft &&
+                    state.remoteStream &&
+                    !state.isRemoteVideoEnabled && (
+                      <div className='absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75'>
+                        <div className='text-center text-white'>
+                          <div className='text-4xl mb-2'>📹</div>
+                          <div className='text-sm'>Camera Off</div>
+                        </div>
+                      </div>
+                    )}
                   {/* Floating reactions over remote video */}
                   <div className='pointer-events-none absolute inset-0 flex flex-col justify-end items-end p-2 space-y-2'>
                     {state.reactions
@@ -217,6 +286,15 @@ const VideoChat: React.FC = () => {
             <div className='mt-6 p-4 bg-gray-50 rounded-lg'>
               <h3 className='font-semibold mb-2'>Connection Info</h3>
               <div className='text-sm text-gray-600 space-y-1'>
+                <p>• My Camera: {state.isVideoEnabled ? 'On' : 'Off'}</p>
+                <p>
+                  • Remote Camera:{' '}
+                  {state.peerLeft || !state.remoteStream
+                    ? '-'
+                    : state.isRemoteVideoEnabled
+                    ? 'On'
+                    : 'Off'}
+                </p>
                 <p>
                   • Local Stream: {state.localStream ? 'Active' : 'Inactive'}
                 </p>

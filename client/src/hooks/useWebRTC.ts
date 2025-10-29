@@ -26,6 +26,8 @@ export const useWebRTC = () => {
     peerLeft: false,
     messages: [],
     reactions: [],
+    isVideoEnabled: true,
+    isRemoteVideoEnabled: true,
   });
 
   const [currentUserId, setCurrentUserId] = useState<string>('');
@@ -365,6 +367,14 @@ export const useWebRTC = () => {
           }, 3000);
         });
 
+        // Handle remote camera status changes
+        socketRef.current.on('remote-camera-status-change', ({ isEnabled }) => {
+          console.log(
+            `Remote camera status changed to: ${isEnabled ? 'ON' : 'OFF'}`
+          );
+          setState((prev) => ({ ...prev, isRemoteVideoEnabled: isEnabled }));
+        });
+
         // Wait for ICE gathering to complete before checking connection
         setTimeout(() => {
           if (pc.iceGatheringState === 'complete') {
@@ -416,6 +426,8 @@ export const useWebRTC = () => {
       peerLeft: false,
       messages: [], // Clear messages when leaving room
       reactions: [],
+      isVideoEnabled: true,
+      isRemoteVideoEnabled: true,
     });
   }, [state.localStream, state.roomId, clearChatMessages]);
 
@@ -490,6 +502,37 @@ export const useWebRTC = () => {
     [state.roomId, currentUserId]
   );
 
+  // Toggle video camera on/off
+  const toggleVideoCamera = useCallback(() => {
+    if (!state.localStream) {
+      console.warn('No local stream available to toggle');
+      return;
+    }
+
+    const videoTrack = state.localStream.getVideoTracks()[0];
+    if (!videoTrack) {
+      console.warn('No video track found in local stream');
+      return;
+    }
+
+    const newEnabledState = !videoTrack.enabled;
+    videoTrack.enabled = newEnabledState;
+
+    setState((prev) => ({ ...prev, isVideoEnabled: newEnabledState }));
+    console.log(`Local video camera turned ${newEnabledState ? 'on' : 'off'}`);
+
+    // Notify other users about camera status change
+    if (socketRef.current && state.roomId) {
+      socketRef.current.emit('camera-status-change', {
+        roomId: state.roomId,
+        isEnabled: newEnabledState,
+      });
+      console.log(
+        `Notified others about camera status: ${newEnabledState ? 'ON' : 'OFF'}`
+      );
+    }
+  }, [state.localStream, state.roomId]);
+
   return {
     state,
     localVideoRef,
@@ -498,6 +541,7 @@ export const useWebRTC = () => {
     leaveRoom,
     sendMessage,
     sendReaction,
+    toggleVideoCamera,
     currentUserId,
   };
 };

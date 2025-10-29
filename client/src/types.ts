@@ -20,6 +20,9 @@ export interface WebRTCState {
   isInRoom: boolean;
   peerLeft: boolean;
   messages: ChatMessage[];
+  reactions: ReactionEvent[];
+  isVideoEnabled: boolean;
+  isRemoteVideoEnabled: boolean;
 }
 
 // Emoji reaction types
@@ -30,9 +33,4 @@ export interface ReactionEvent {
   emoji: ReactionEmoji;
   senderId: string;
   timestamp: number;
-}
-
-// Extendable app state additions for reactions
-export interface WebRTCState {
-  reactions: ReactionEvent[];
 }

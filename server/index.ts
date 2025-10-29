@@ -64,6 +64,17 @@ io.on('connection', (socket) => {
       .emit('receive-reaction', { ...reaction, senderId: socket.id });
   });
 
+  // Handle camera status changes
+  socket.on('camera-status-change', ({ roomId, isEnabled }) => {
+    console.log(
+      `Camera status change from ${socket.id}: ${isEnabled ? 'ON' : 'OFF'}`
+    );
+    socket.to(roomId).emit('remote-camera-status-change', {
+      userId: socket.id,
+      isEnabled,
+    });
+  });
+
   // Handle explicit leave room
   socket.on('leave-room', (roomId: string) => {
     console.log(`🚪 Client ${socket.id} explicitly left room ${roomId}`);
