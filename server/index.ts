@@ -75,6 +75,17 @@ io.on('connection', (socket) => {
     });
   });
 
+  // Handle microphone status changes
+  socket.on('mic-status-change', ({ roomId, isMuted }) => {
+    console.log(
+      `Mic status change from ${socket.id}: ${isMuted ? 'MUTED' : 'UNMUTED'}`
+    );
+    socket.to(roomId).emit('remote-mic-status-change', {
+      userId: socket.id,
+      isMuted,
+    });
+  });
+
   // Handle explicit leave room
   socket.on('leave-room', (roomId: string) => {
     console.log(`🚪 Client ${socket.id} explicitly left room ${roomId}`);

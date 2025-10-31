@@ -28,6 +28,8 @@ export const useWebRTC = () => {
     reactions: [],
     isVideoEnabled: true,
     isRemoteVideoEnabled: true,
+    isMicMuted: false,
+    isRemoteMicMuted: false,
   });
 
   const [currentUserId, setCurrentUserId] = useState<string>('');
@@ -233,6 +235,17 @@ export const useWebRTC = () => {
               type: 'offer',
             });
             console.log('Offer sent');
+
+            // Broadcast current mic status to sync with newly joined peer
+            socketRef.current?.emit('mic-status-change', {
+              roomId,
+              isMuted: state.isMicMuted,
+            });
+            console.log(
+              `Broadcasted current mic status after user-joined: ${
+                state.isMicMuted ? 'MUTED' : 'UNMUTED'
+              }`
+            );
           } catch (error) {
             console.error('Failed to create offer:', error);
           }
@@ -292,6 +305,17 @@ export const useWebRTC = () => {
                   type: 'offer',
                 });
                 console.log('Initial offer sent');
+
+                // Broadcast current mic status to sync with existing peer
+                socketRef.current?.emit('mic-status-change', {
+                  roomId,
+                  isMuted: state.isMicMuted,
+                });
+                console.log(
+                  `Broadcasted current mic status on initial offer: ${
+                    state.isMicMuted ? 'MUTED' : 'UNMUTED'
+                  }`
+                );
               } catch (error) {
                 console.error('Failed to create initial offer:', error);
               }
@@ -375,6 +399,14 @@ export const useWebRTC = () => {
           setState((prev) => ({ ...prev, isRemoteVideoEnabled: isEnabled }));
         });
 
+        // Handle remote mic status changes
+        socketRef.current.on('remote-mic-status-change', ({ isMuted }) => {
+          console.log(
+            `Remote mic status changed to: ${isMuted ? 'MUTED' : 'UNMUTED'}`
+          );
+          setState((prev) => ({ ...prev, isRemoteMicMuted: isMuted }));
+        });
+
         // Wait for ICE gathering to complete before checking connection
         setTimeout(() => {
           if (pc.iceGatheringState === 'complete') {
@@ -428,6 +460,8 @@ export const useWebRTC = () => {
       reactions: [],
       isVideoEnabled: true,
       isRemoteVideoEnabled: true,
+      isMicMuted: false,
+      isRemoteMicMuted: false,
     });
   }, [state.localStream, state.roomId, clearChatMessages]);
 
@@ -533,6 +567,40 @@ export const useWebRTC = () => {
     }
   }, [state.localStream, state.roomId]);
 
+  // Toggle microphone mute/unmute
+  const toggleMicrophone = useCallback(() => {
+    if (!state.localStream) {
+      console.warn('No local stream available to toggle mic');
+      return;
+    }
+
+    const audioTrack = state.localStream.getAudioTracks()[0];
+    if (!audioTrack) {
+      console.warn('No audio track found in local stream');
+      return;
+    }
+
+    const newEnabledState = !audioTrack.enabled; // if currently enabled, we will disable
+    audioTrack.enabled = newEnabledState;
+
+    const newMutedState = !newEnabledState;
+    setState((prev) => ({ ...prev, isMicMuted: newMutedState }));
+    console.log(`Local microphone ${newMutedState ? 'muted' : 'unmuted'}`);
+
+    // Notify other users about mic status change
+    if (socketRef.current && state.roomId) {
+      socketRef.current.emit('mic-status-change', {
+        roomId: state.roomId,
+        isMuted: newMutedState,
+      });
+      console.log(
+        `Notified others about mic status: ${
+          newMutedState ? 'MUTED' : 'UNMUTED'
+        }`
+      );
+    }
+  }, [state.localStream, state.roomId]);
+
   return {
     state,
     localVideoRef,
@@ -542,6 +610,7 @@ export const useWebRTC = () => {
     sendMessage,
     sendReaction,
     toggleVideoCamera,
+    toggleMicrophone,
     currentUserId,
   };
 };

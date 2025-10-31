@@ -23,6 +23,8 @@ export interface WebRTCState {
   reactions: ReactionEvent[];
   isVideoEnabled: boolean;
   isRemoteVideoEnabled: boolean;
+  isMicMuted: boolean;
+  isRemoteMicMuted: boolean;
 }
 
 // Emoji reaction types

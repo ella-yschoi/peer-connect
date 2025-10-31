@@ -13,6 +13,7 @@ const VideoChat: React.FC = () => {
     sendMessage,
     sendReaction,
     toggleVideoCamera,
+    toggleMicrophone,
     currentUserId,
   } = useWebRTC();
   const [roomInput, setRoomInput] = useState('');
@@ -134,6 +135,34 @@ const VideoChat: React.FC = () => {
                       </div>
                     </div>
                   )}
+                  {/* Local mic muted badge */}
+                  {state.isMicMuted && (
+                    <div
+                      className='absolute top-2 right-2 bg-red-600 text-white rounded-full p-2'
+                      title='Mic muted'
+                    >
+                      <svg
+                        xmlns='http://www.w3.org/2000/svg'
+                        className='h-4 w-4'
+                        viewBox='0 0 24 24'
+                        fill='none'
+                        stroke='currentColor'
+                      >
+                        <path
+                          strokeLinecap='round'
+                          strokeLinejoin='round'
+                          strokeWidth={2}
+                          d='M19 11a7 7 0 01-14 0M5 11H3m18 0h-2M12 1a3 3 0 00-3 3v6a3 3 0 106 0V4a3 3 0 00-3-3M12 17v4m0 0h3m-3 0H9'
+                        />
+                        <path
+                          strokeLinecap='round'
+                          strokeLinejoin='round'
+                          strokeWidth={2}
+                          d='M4 4L20 20'
+                        />
+                      </svg>
+                    </div>
+                  )}
                   {/* Floating reactions over local video */}
                   <div className='pointer-events-none absolute inset-0 flex flex-col justify-end items-start p-2 space-y-2'>
                     {state.reactions
@@ -149,8 +178,8 @@ const VideoChat: React.FC = () => {
                         </span>
                       ))}
                   </div>
-                  {/* Camera toggle button */}
-                  <div className='absolute bottom-4 right-4'>
+                  {/* Camera/Mic toggle buttons */}
+                  <div className='absolute bottom-4 right-4 flex gap-2'>
                     <button
                       onClick={toggleVideoCamera}
                       className={`p-3 rounded-full transition-colors ${
@@ -159,6 +188,11 @@ const VideoChat: React.FC = () => {
                           : 'bg-red-600 hover:bg-red-700 text-white'
                       }`}
                       title={
+                        state.isVideoEnabled
+                          ? 'Turn off camera'
+                          : 'Turn on camera'
+                      }
+                      aria-label={
                         state.isVideoEnabled
                           ? 'Turn off camera'
                           : 'Turn on camera'
@@ -196,6 +230,50 @@ const VideoChat: React.FC = () => {
                         </svg>
                       )}
                     </button>
+                    <button
+                      onClick={toggleMicrophone}
+                      className={`p-3 rounded-full transition-colors ${
+                        state.isMicMuted
+                          ? 'bg-red-600 hover:bg-red-700 text-white'
+                          : 'bg-gray-700 hover:bg-gray-600 text-white'
+                      }`}
+                      title={
+                        state.isMicMuted
+                          ? 'Unmute microphone'
+                          : 'Mute microphone'
+                      }
+                      aria-pressed={state.isMicMuted}
+                      aria-label={
+                        state.isMicMuted
+                          ? 'Unmute microphone'
+                          : 'Mute microphone'
+                      }
+                    >
+                      <svg
+                        xmlns='http://www.w3.org/2000/svg'
+                        className='h-6 w-6'
+                        viewBox='0 0 24 24'
+                        fill='none'
+                        stroke='currentColor'
+                      >
+                        {/* Base mic icon (same for ON/OFF) */}
+                        <path
+                          strokeLinecap='round'
+                          strokeLinejoin='round'
+                          strokeWidth={2}
+                          d='M19 11a7 7 0 01-14 0M5 11H3m18 0h-2M12 1a3 3 0 00-3 3v6a3 3 0 106 0V4a3 3 0 00-3-3M12 17v4m0 0h3m-3 0H9'
+                        />
+                        {/* Slash overlay when muted */}
+                        {state.isMicMuted && (
+                          <path
+                            strokeLinecap='round'
+                            strokeLinejoin='round'
+                            strokeWidth={2}
+                            d='M4 4L20 20'
+                          />
+                        )}
+                      </svg>
+                    </button>
                   </div>
                 </div>
 
@@ -227,6 +305,36 @@ const VideoChat: React.FC = () => {
                       Waiting for other participants...
                     </div>
                   ) : null}
+                  {/* Remote mic muted badge */}
+                  {!state.peerLeft &&
+                    state.remoteStream &&
+                    state.isRemoteMicMuted && (
+                      <div
+                        className='absolute top-2 right-2 bg-red-600 text-white rounded-full p-2'
+                        title='Remote mic muted'
+                      >
+                        <svg
+                          xmlns='http://www.w3.org/2000/svg'
+                          className='h-4 w-4'
+                          viewBox='0 0 24 24'
+                          fill='none'
+                          stroke='currentColor'
+                        >
+                          <path
+                            strokeLinecap='round'
+                            strokeLinejoin='round'
+                            strokeWidth={2}
+                            d='M19 11a7 7 0 01-14 0M5 11H3m18 0h-2M12 1a3 3 0 00-3 3v6a3 3 0 106 0V4a3 3 0 00-3-3M12 17v4m0 0h3m-3 0H9'
+                          />
+                          <path
+                            strokeLinecap='round'
+                            strokeLinejoin='round'
+                            strokeWidth={2}
+                            d='M4 4L20 20'
+                          />
+                        </svg>
+                      </div>
+                    )}
                   {/* Remote camera disabled overlay */}
                   {!state.peerLeft &&
                     state.remoteStream &&
@@ -294,6 +402,15 @@ const VideoChat: React.FC = () => {
                     : state.isRemoteVideoEnabled
                     ? 'On'
                     : 'Off'}
+                </p>
+                <p>• My Mic: {state.isMicMuted ? 'Muted' : 'On'}</p>
+                <p>
+                  • Remote Mic:{' '}
+                  {state.peerLeft || !state.remoteStream
+                    ? '-'
+                    : state.isRemoteMicMuted
+                    ? 'Muted'
+                    : 'On'}
                 </p>
                 <p>
                   • Local Stream: {state.localStream ? 'Active' : 'Inactive'}
