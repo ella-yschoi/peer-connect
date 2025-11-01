@@ -41,38 +41,42 @@ const VideoChat: React.FC = () => {
   };
 
   return (
-    <div className='min-h-screen bg-gray-100 p-4'>
+    <div className='min-h-screen p-6'>
       <div className='max-w-6xl mx-auto'>
         {/* Header */}
-        <div className='text-center mb-8'>
-          <div className='flex items-center justify-center gap-3 mb-2'>
+        <div className='text-center mb-8 liquid-highlight'>
+          <div className='flex items-center justify-center gap-3 mb-2 animate-liquid-float'>
             <img
               src='/peerconnect-icon.png'
               alt='PeerConnect icon'
-              className='h-10 w-10'
+              className='h-10 w-10 drop-shadow'
             />
-            <h1 className='text-4xl font-bold text-gray-800'>PeerConnect</h1>
+            <h1 className='text-4xl font-semibold text-ink-900 tracking-tight'>
+              PeerConnect
+            </h1>
           </div>
-          <p className='text-gray-600'>WebRTC P2P Video Chat</p>
+          <p className='text-ink-600 font-normal'>WebRTC P2P Video Chat</p>
         </div>
 
         {/* Room Join Section */}
         {!state.isInRoom && (
-          <div className='bg-white rounded-lg shadow-md p-6 mb-8'>
-            <h2 className='text-2xl font-semibold mb-4'>Join Room</h2>
+          <div className='liquid-card p-6 mb-8'>
+            <h2 className='text-2xl font-semibold mb-4 tracking-tight'>
+              Join Room
+            </h2>
             <div className='flex gap-4'>
               <input
                 type='text'
                 value={roomInput}
                 onChange={(e) => setRoomInput(e.target.value)}
                 placeholder='Enter room code'
-                className='flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'
+                className='flex-1 px-4 py-2 liquid-soft focus:outline-none focus:ring-2 focus:ring-blue-500/60'
                 onKeyPress={(e) => e.key === 'Enter' && handleJoinRoom()}
               />
               <button
                 onClick={handleJoinRoom}
                 disabled={isJoining || !roomInput.trim()}
-                className='px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed'
+                className='px-6 py-2 rounded-xl bg-blue-500 text-white shadow-glow hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed'
               >
                 {isJoining ? 'Joining...' : 'Join'}
               </button>
@@ -82,22 +86,24 @@ const VideoChat: React.FC = () => {
 
         {/* Video Chat Section */}
         {state.isInRoom && (
-          <div className='bg-white rounded-lg shadow-md p-6'>
+          <div className='liquid-card p-6'>
             <div className='flex justify-between items-center mb-6'>
-              <h2 className='text-2xl font-semibold'>Room: {state.roomId}</h2>
+              <h2 className='text-2xl font-semibold tracking-tight'>
+                Room: {state.roomId}
+              </h2>
               <div className='flex items-center gap-4'>
                 <div
                   className={`px-3 py-1 rounded-full text-sm ${
                     state.isConnected
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-yellow-100 text-yellow-800'
+                      ? 'bg-green-200/60 text-green-900'
+                      : 'bg-yellow-200/60 text-yellow-900'
                   }`}
                 >
                   {state.isConnected ? 'Connected' : 'Connecting...'}
                 </div>
                 <button
                   onClick={handleLeaveRoom}
-                  className='px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600'
+                  className='px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 shadow-glow'
                 >
                   Leave
                 </button>
@@ -109,8 +115,11 @@ const VideoChat: React.FC = () => {
               {/* Video Grid */}
               <div className='lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6'>
                 {/* Local Video */}
-                <div className='bg-gray-900 rounded-lg overflow-hidden relative'>
-                  <div className='bg-gray-800 px-4 py-2 text-white text-sm'>
+                <div className='rounded-2xl overflow-hidden relative liquid-soft'>
+                  <div
+                    className='px-4 py-2 text-white text-sm'
+                    style={{ background: 'rgba(0,0,0,0.35)' }}
+                  >
                     My Screen
                   </div>
                   <video
@@ -118,17 +127,16 @@ const VideoChat: React.FC = () => {
                     autoPlay
                     muted
                     playsInline
-                    className='w-full h-64 object-cover'
-                    style={{ backgroundColor: '#1f2937' }}
+                    className='w-full h-64 object-cover bg-black/40'
                   />
                   {!state.localStream && (
-                    <div className='absolute inset-0 flex items-center justify-center text-gray-400'>
+                    <div className='absolute inset-0 flex items-center justify-center text-gray-300'>
                       Loading local stream...
                     </div>
                   )}
                   {/* Camera disabled overlay */}
                   {!state.isVideoEnabled && (
-                    <div className='absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75'>
+                    <div className='absolute inset-0 flex items-center justify-center bg-black/60'>
                       <div className='text-center text-white'>
                         <div className='text-4xl mb-2'>📹</div>
                         <div className='text-sm'>Camera Off</div>
@@ -138,7 +146,7 @@ const VideoChat: React.FC = () => {
                   {/* Local mic muted badge */}
                   {state.isMicMuted && (
                     <div
-                      className='absolute top-2 right-2 bg-red-600 text-white rounded-full p-2'
+                      className='absolute top-2 right-2 bg-red-600 text-white rounded-full p-2 shadow-glow'
                       title='Mic muted'
                     >
                       <svg
@@ -171,7 +179,7 @@ const VideoChat: React.FC = () => {
                       .map((r) => (
                         <span
                           key={r.id}
-                          className='text-3xl animate-bounce'
+                          className='text-3xl animate-liquid-float'
                           aria-hidden
                         >
                           {r.emoji}
@@ -182,9 +190,9 @@ const VideoChat: React.FC = () => {
                   <div className='absolute bottom-4 right-4 flex gap-2'>
                     <button
                       onClick={toggleVideoCamera}
-                      className={`p-3 rounded-full transition-colors ${
+                      className={`p-3 rounded-full transition-colors shadow-glow ${
                         state.isVideoEnabled
-                          ? 'bg-gray-700 hover:bg-gray-600 text-white'
+                          ? 'bg-gray-700/80 hover:bg-gray-600/90 text-white'
                           : 'bg-red-600 hover:bg-red-700 text-white'
                       }`}
                       title={
@@ -232,10 +240,10 @@ const VideoChat: React.FC = () => {
                     </button>
                     <button
                       onClick={toggleMicrophone}
-                      className={`p-3 rounded-full transition-colors ${
+                      className={`p-3 rounded-full transition-colors shadow-glow ${
                         state.isMicMuted
                           ? 'bg-red-600 hover:bg-red-700 text-white'
-                          : 'bg-gray-700 hover:bg-gray-600 text-white'
+                          : 'bg-gray-700/80 hover:bg-gray-600/90 text-white'
                       }`}
                       title={
                         state.isMicMuted
@@ -278,18 +286,24 @@ const VideoChat: React.FC = () => {
                 </div>
 
                 {/* Remote Video */}
-                <div className='bg-gray-900 rounded-lg overflow-hidden relative'>
-                  <div className='bg-gray-800 px-4 py-2 text-white text-sm'>
+                <div className='rounded-2xl overflow-hidden relative liquid-soft'>
+                  <div
+                    className='px-4 py-2 text-white text-sm'
+                    style={{ background: 'rgba(0,0,0,0.35)' }}
+                  >
                     Remote Screen
                   </div>
                   <video
                     ref={remoteVideoRef}
                     autoPlay
                     playsInline
-                    className='w-full h-64 object-cover bg-gray-800'
+                    className='w-full h-64 object-cover bg-black/40'
                   />
                   {state.peerLeft ? (
-                    <div className='flex items-center justify-center h-64 text-red-400 bg-gray-800'>
+                    <div
+                      className='flex items-center justify-center h-64 text-red-300'
+                      style={{ background: 'rgba(0,0,0,0.35)' }}
+                    >
                       <div className='text-center'>
                         <div className='text-2xl mb-2'>👋</div>
                         <div className='text-lg font-semibold'>
@@ -301,7 +315,7 @@ const VideoChat: React.FC = () => {
                       </div>
                     </div>
                   ) : !state.remoteStream ? (
-                    <div className='flex items-center justify-center h-64 text-gray-400'>
+                    <div className='flex items-center justify-center h-64 text-gray-300'>
                       Waiting for other participants...
                     </div>
                   ) : null}
@@ -310,7 +324,7 @@ const VideoChat: React.FC = () => {
                     state.remoteStream &&
                     state.isRemoteMicMuted && (
                       <div
-                        className='absolute top-2 right-2 bg-red-600 text-white rounded-full p-2'
+                        className='absolute top-2 right-2 bg-red-600 text-white rounded-full p-2 shadow-glow'
                         title='Remote mic muted'
                       >
                         <svg
@@ -339,7 +353,7 @@ const VideoChat: React.FC = () => {
                   {!state.peerLeft &&
                     state.remoteStream &&
                     !state.isRemoteVideoEnabled && (
-                      <div className='absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75'>
+                      <div className='absolute inset-0 flex items-center justify-center bg-black/60'>
                         <div className='text-center text-white'>
                           <div className='text-4xl mb-2'>📹</div>
                           <div className='text-sm'>Camera Off</div>
@@ -354,7 +368,7 @@ const VideoChat: React.FC = () => {
                       .map((r) => (
                         <span
                           key={r.id}
-                          className='text-3xl animate-bounce'
+                          className='text-3xl animate-liquid-float'
                           aria-hidden
                         >
                           {r.emoji}
@@ -382,7 +396,7 @@ const VideoChat: React.FC = () => {
                 <button
                   key={e}
                   onClick={() => sendReaction(e)}
-                  className='px-3 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-xl'
+                  className='px-3 py-2 rounded-xl text-xl liquid-soft hover:brightness-110'
                   title='Send reaction'
                 >
                   {e}
@@ -391,9 +405,9 @@ const VideoChat: React.FC = () => {
             </div>
 
             {/* Connection Status Info */}
-            <div className='mt-6 p-4 bg-gray-50 rounded-lg'>
+            <div className='mt-6 p-4 liquid-soft'>
               <h3 className='font-semibold mb-2'>Connection Info</h3>
-              <div className='text-sm text-gray-600 space-y-1'>
+              <div className='text-sm text-ink-700 space-y-1'>
                 <p>• My Camera: {state.isVideoEnabled ? 'On' : 'Off'}</p>
                 <p>
                   • Remote Camera:{' '}
@@ -437,11 +451,11 @@ const VideoChat: React.FC = () => {
         )}
 
         {/* Instructions Section */}
-        <div className='mt-8 bg-blue-50 rounded-lg p-6'>
-          <h3 className='text-lg font-semibold text-blue-800 mb-3'>
+        <div className='mt-8 p-6 liquid-card'>
+          <h3 className='text-lg font-semibold text-blue-800 mb-3 tracking-tight'>
             How to Use
           </h3>
-          <ul className='text-blue-700 space-y-2'>
+          <ul className='text-ink-700 space-y-2'>
             <li>• Two users with the same room code are required</li>
             <li>• Please allow camera and microphone permissions</li>
             <li>
